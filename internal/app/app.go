@@ -1,19 +1,17 @@
 package app
 
 import (
-	"database/sql"
 	"ebox-api/internal/config"
+	"ebox-api/internal/db"
+	"ebox-api/pkg/auth"
 	"ebox-api/pkg/boxes"
 	"ebox-api/pkg/users"
-	"fmt"
 	"github.com/gin-gonic/gin"
-
-	_ "github.com/lib/pq"
 )
 
 type App struct {
 	Router *gin.Engine
-	DB *sql.DB
+	DB *db.DB
 	Config *config.AppConfig
 }
 
@@ -21,34 +19,25 @@ func Create (config *config.Config) *App {
 	r := gin.Default()
 	r.Use(gin.Logger())
 
+	r.NoRoute(func(c *gin.Context) {
+		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Page not found"})
+	})
+
 	apiRouter := r.Group("/api")
 
-	dbConnInfo := fmt.Sprintf(`
-		host=%s
-		port=%d
-		user=%s
-		password=%s
-		dbname=%s
-		sslmode=disable`,
-		config.DB.Host,
-		config.DB.Port,
-		config.DB.Username,
-		config.DB.Password,
-		config.DB.DBName)
+	dbStore, err := db.New(config.DB)
 
-	db, err := sql.Open("postgres", dbConnInfo)
 	if err != nil {
 		panic(err)
 	}
 
-	defer db.Close()
-
-	boxes.Register(apiRouter, db)
-	users.Register(apiRouter, db)
+	auth.Register(apiRouter, dbStore)
+	users.Register(apiRouter, dbStore)
+	boxes.Register(apiRouter, dbStore)
 
 	return &App{
 		Router: r,
-		DB: db,
+		DB: dbStore,
 		Config: config.App,
 	}
 }

@@ -1,11 +1,11 @@
 package boxes
 
 import (
-	"database/sql"
+	"ebox-api/internal/db"
 	"github.com/gin-gonic/gin"
 )
 
-func Register (router *gin.RouterGroup, db *sql.DB) {
+func Register (router *gin.RouterGroup, db *db.DB) {
 	svc := NewService(db)
 	handlers := NewHandlers(svc)
 

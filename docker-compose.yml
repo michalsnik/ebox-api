@@ -11,7 +11,11 @@ services:
     links:
       - database
     environment:
-      DATABASE_URL: 'postgres://postgres:supersecret@postgres/postgres?sslmode=disable'
+      DB_HOST: localhost
+      DB_PORT: 5434
+      DB_USER: postgres
+      DB_PASSWORD: supersecret
+      DB_NAME: postgres
 
   database:
     image: postgres

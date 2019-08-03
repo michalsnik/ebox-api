@@ -1,10 +1,14 @@
 package users
 
 import (
-	"database/sql"
+	"ebox-api/internal/db"
 	"github.com/gin-gonic/gin"
 )
 
-func Register (router *gin.RouterGroup, db *sql.DB) {
-	router.GET("/users", GetUsers)
+func Register (router *gin.RouterGroup, db *db.DB) {
+	usersRepository := NewUsersRepository(db)
+	usersSvc := NewUsersService(usersRepository)
+	handlers := NewUsersHandlers(usersSvc)
+
+	router.POST("/users", handlers.PostUser)
 }
