@@ -3,6 +3,7 @@ module ebox-api
 go 1.12
 
 require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.4.0
 	github.com/gorilla/mux v1.7.3
 	github.com/ianschenck/envflag v0.0.0-20140720210342-9111d830d133

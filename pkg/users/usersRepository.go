@@ -16,6 +16,7 @@ var (
 	ErrInvalidEmail = errors.New("invalid email address")
 	ErrPasswordContainsInvalidChars = errors.New("password contains invalid characters")
 	ErrPasswordTooShort = errors.New("password is too short")
+	ErrWrongCredentials = errors.New("wrong credentials")
 
 	emailRegExp = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
@@ -33,7 +34,7 @@ func NewUsersRepository(db *db.DB) *UsersRepository {
 	}
 }
 
-func (svc *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, error) {
+func (r *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, error) {
 	password, err := hashPassword(reqData.Password)
 	if err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (svc *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, erro
 	`
 
 	user := new(User)
-	err = svc.db.QueryRow(query, reqData.Email, password, reqData.FirstName, reqData.LastName, reqData.AvatarURL).
+	err = r.db.QueryRow(query, reqData.Email, password, reqData.FirstName, reqData.LastName, reqData.AvatarURL).
 		Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.AvatarURL)
 
 	if err != nil {
@@ -62,6 +63,23 @@ func (svc *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, erro
 	}
 
 	return user, nil
+}
+
+func (r *UsersRepository) ValidateUser(email string, password string) (int, error) {
+	query := `SELECT id, password FROM ebox.users WHERE email = $1 LIMIT 1`
+	var currentPassword string
+	var userID int
+	err := r.db.QueryRow(query, email).Scan(&userID, &currentPassword)
+	if err != nil {
+		return 0, ErrWrongCredentials
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(currentPassword), []byte(password))
+	if err != nil {
+		return 0, ErrWrongCredentials
+	}
+
+	return userID, nil
 }
 
 func validatePassword(password string) error {
