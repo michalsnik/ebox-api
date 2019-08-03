@@ -1,0 +1,31 @@
+version: '3.6'
+
+services:
+  ebox-api:
+    build:
+      context: .
+      args:
+        target: production
+    ports:
+      - 4000:4000
+    links:
+      - database
+    environment:
+      DATABASE_URL: 'postgres://postgres:supersecret@postgres/postgres?sslmode=disable'
+
+  database:
+    image: postgres
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_PASSWORD: supersecret
+
+  postgres-admin:
+    image: dpage/pgadmin4
+    ports:
+      - '4010:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: 'asd@qwe.pl'
+      PGADMIN_DEFAULT_PASSWORD: 'asdqwe'
+    links:
+      - database
