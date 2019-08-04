@@ -1,38 +1,43 @@
 package auth
 
-import (
-	"ebox-api/pkg/users"
-	"github.com/dgrijalva/jwt-go"
-)
-
-const (
-	hmacSecret = "asdqlwepoque1092309uhaksdan1k2m0129"
-)
-
-type AuthService struct {
-	usersRepository *users.UsersRepository
+type AuthRepository interface {
+	ValidateUser(email string, password string) (int, error)
 }
 
-func NewAuthService(usersRepository *users.UsersRepository) *AuthService {
-	return &AuthService{
-		usersRepository: usersRepository,
+type AuthService interface {
+	AuthenticateUser (email string, password string) (string, error)
+	ParseToken (tokenString string) (int, error)
+	CreateToken (userID int) (string, error)
+}
+
+type authService struct {
+	r AuthRepository
+}
+
+func NewAuthService(r AuthRepository) AuthService {
+	return &authService{
+		r: r,
 	}
 }
 
-func (svc *AuthService) AuthenticateUser (email string, password string) (string, error) {
-	userID, err := svc.usersRepository.ValidateUser(email, password)
+func (svc *authService) AuthenticateUser (email string, password string) (string, error) {
+	userID, err := svc.r.ValidateUser(email, password)
 	if err != nil {
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID": userID,
-	})
-
-	tokenString, err := token.SignedString([]byte(hmacSecret))
+	tokenString, err := svc.CreateToken(userID)
 	if err != nil {
 		return "", err
 	}
 
 	return tokenString, nil
+}
+
+func (svc *authService) ParseToken (tokenString string) (int, error) {
+	return ParseToken(tokenString)
+}
+
+func (svc *authService) CreateToken (userID int) (string, error) {
+	return CreateToken(userID)
 }

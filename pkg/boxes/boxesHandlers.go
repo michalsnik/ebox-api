@@ -6,23 +6,29 @@ import (
 	"strconv"
 )
 
-type Handlers struct {
-	svc *Service
+type BoxesHandlers interface {
+	GetBoxById (c *gin.Context)
+	PutBox (c *gin.Context)
+}
+
+type boxesHandlers struct {
+	BoxesHandlers
+	svc BoxesService
 }
 
 type CreateBoxRequest struct {
 	Name string `json:"name"`
 }
 
-func NewHandlers(svc *Service) *Handlers {
-	return &Handlers{svc: svc}
+func NewHandlers(svc BoxesService) BoxesHandlers {
+	return &boxesHandlers{svc: svc}
 }
 
-func (h *Handlers) GetBoxById (c *gin.Context) {
+func (h *boxesHandlers) GetBoxById (c *gin.Context) {
 	boxId, err := strconv.Atoi(c.Param("boxID"))
 
 	if err != nil {
-		return
+		c.JSON(http.StatusBadRequest, nil)
 	}
 
 	box := h.svc.GetBoxById(boxId)
@@ -30,7 +36,7 @@ func (h *Handlers) GetBoxById (c *gin.Context) {
 	c.JSON(http.StatusOK, box)
 }
 
-func (h *Handlers) PutBox (c *gin.Context) {
+func (h *boxesHandlers) PutBox (c *gin.Context) {
 	var payload CreateBoxRequest
 
 	err := c.BindJSON(&payload)

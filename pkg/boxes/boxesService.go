@@ -4,19 +4,24 @@ import (
 	"ebox-api/internal/db"
 )
 
-type Service struct {
+type BoxesService interface {
+	GetBoxById (boxID int) Box
+	CreateBox (payload CreateBoxRequest) (*Box, error)
+}
+
+type boxesService struct {
 	db *db.DB
 }
 
-func NewService(db *db.DB) *Service {
-	return &Service{db: db}
+func NewService(db *db.DB) BoxesService {
+	return &boxesService{db: db}
 }
 
-func (svc *Service) GetBoxById (boxID int) Box {
+func (svc *boxesService) GetBoxById (boxID int) Box {
 	return Box{Id: boxID, Name: "Lorem ipsum"}
 }
 
-func (svc *Service) CreateBox (payload CreateBoxRequest) (*Box, error) {
+func (svc *boxesService) CreateBox (payload CreateBoxRequest) (*Box, error) {
 	query := `
 		INSERT INTO ebox.boxes (name)
 		VALUES ($1)

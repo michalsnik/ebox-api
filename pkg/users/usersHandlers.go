@@ -6,8 +6,13 @@ import (
 	"net/http"
 )
 
-type UsersHandlers struct {
-	svc *UsersService
+type UsersHandlers interface {
+	PostUser (c *gin.Context)
+	GetMe (c *gin.Context)
+}
+
+type usersHandlers struct {
+	svc UsersService
 }
 
 type PostUserRequestData struct {
@@ -18,13 +23,13 @@ type PostUserRequestData struct {
 	AvatarURL string `json:"avatarURL"`
 }
 
-func NewUsersHandlers(svc *UsersService) *UsersHandlers {
-	return &UsersHandlers{
+func NewUsersHandlers(svc UsersService) UsersHandlers {
+	return &usersHandlers{
 		svc: svc,
 	}
 }
 
-func (h *UsersHandlers) PostUser (c *gin.Context) {
+func (h *usersHandlers) PostUser (c *gin.Context) {
 	var reqData PostUserRequestData
 
 	err := c.BindJSON(&reqData)
@@ -40,4 +45,16 @@ func (h *UsersHandlers) PostUser (c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, response.Create(user, nil))
+}
+
+func (h *usersHandlers) GetMe (c *gin.Context) {
+	userID := c.Value("userID").(int)
+
+	user, err := h.svc.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, response.Create(nil, err))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.Create(user, nil))
 }

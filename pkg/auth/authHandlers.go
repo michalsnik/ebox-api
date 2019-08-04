@@ -6,8 +6,12 @@ import (
 	"net/http"
 )
 
-type AuthHandlers struct {
-	svc *AuthService
+type AuthHandlers interface {
+	SignIn (c *gin.Context)
+}
+
+type authHandlers struct {
+	svc AuthService
 }
 
 type SignInRequestData struct {
@@ -19,13 +23,13 @@ type SignInResponseData struct {
 	Token string `json:"token"`
 }
 
-func NewAuthHandlers(svc *AuthService) *AuthHandlers {
-	return &AuthHandlers{
+func NewAuthHandlers(svc AuthService) AuthHandlers {
+	return &authHandlers{
 		svc: svc,
 	}
 }
 
-func (h *AuthHandlers) SignIn (c *gin.Context) {
+func (h *authHandlers) SignIn (c *gin.Context) {
 	var reqData SignInRequestData
 
 	err := c.BindJSON(&reqData)
@@ -46,4 +50,3 @@ func (h *AuthHandlers) SignIn (c *gin.Context) {
 
 	c.JSON(http.StatusOK, response.Create(resData, nil))
 }
-

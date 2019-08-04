@@ -24,17 +24,23 @@ var (
 	validPasswordCharsRegExp = regexp.MustCompile("^[[:print:]]+$")
 )
 
-type UsersRepository struct {
+type UsersRepository interface {
+	CreateUser(reqData PostUserRequestData) (*User, error)
+	GetUserById(userID int) (*User, error)
+	ValidateUser(email string, password string) (int, error)
+}
+
+type usersRepository struct {
 	db *db.DB
 }
 
-func NewUsersRepository(db *db.DB) *UsersRepository {
-	return &UsersRepository{
+func NewUsersRepository(db *db.DB) UsersRepository {
+	return &usersRepository{
 		db: db,
 	}
 }
 
-func (r *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, error) {
+func (r *usersRepository) CreateUser(reqData PostUserRequestData) (*User, error) {
 	password, err := hashPassword(reqData.Password)
 	if err != nil {
 		return nil, err
@@ -65,7 +71,18 @@ func (r *UsersRepository) CreateUser(reqData PostUserRequestData) (*User, error)
 	return user, nil
 }
 
-func (r *UsersRepository) ValidateUser(email string, password string) (int, error) {
+func (r *usersRepository) GetUserById(userID int) (*User, error) {
+	query := `SELECT id, email, firstName, lastName, avatarUrl FROM ebox.users WHERE id = $1 LIMIT 1`
+	user := new(User)
+	err := r.db.QueryRow(query, userID).Scan(&user.Id, &user.Email, &user.FirstName, &user.LastName, &user.AvatarURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (r *usersRepository) ValidateUser(email string, password string) (int, error) {
 	query := `SELECT id, password FROM ebox.users WHERE email = $1 LIMIT 1`
 	var currentPassword string
 	var userID int
